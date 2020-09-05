@@ -1,6 +1,3 @@
-// create answer
-// add stream
-// 获取桌面流
 import EventEmitter from 'events'
 const { desktopCapturer, ipcRenderer} = require('electron')
 let peer = new EventEmitter()
@@ -15,11 +12,6 @@ ipcRenderer.on('offer', (e, offer) => {
     createAnswer(offer).then((answer) => {
         ipcRenderer.send('forward', 'answer', { type: answer.type, sdp: answer.sdp })
     })
-
-    // ipcRenderer.on('offer', async (e, offer) => {
-    //     let answer = await createAnswer(offer)
-    //     ipcRenderer.send('forward', 'answer', { type: answer.type, sdp: answer.sdp })
-    // })
 
     //获取视频流
     async function getScreenStreamV2() {
@@ -40,31 +32,31 @@ ipcRenderer.on('offer', (e, offer) => {
         });
     }
 
-    pc.onicecandidate = function (e) {
-        let candidate = e.candidate
-        console.log('candidate', JSON.stringify(candidate))
-        if (candidate) {
-            pc.addIceCandidate(candidate)
-            // ipcRenderer.send('forward', 'puppet-candidate', candidate.toJSON())
+    pc.onicecandidate = function (e) { //
+        if (e.candidate) {
+            // 告知其他人
+            console.log('candidate need to be send', JSON.stringify(e.candidate))
+            ipcRenderer.send('forward', 'puppet-candidate', e.candidate.toJSON())
         }
     }
 
-    // async function addIceCandidate(candidate) {
-    //     if (!candidate || !candidate.type) return
-    //     console.log('addIceCandidate success', candidate)
-    //     await pc.addIceCandidate(new RTCIceCandidate(candidate))
-    // }
+    async function addIceCandidate(candidate) {
+        if (!candidate) return
+        console.log('addIceCandidate success', candidate)
+        await pc.addIceCandidate(new RTCIceCandidate(candidate))
+    }
 
-    // ipcRenderer.on('candidate', (e, candidate) => {
-    //     addIceCandidate(candidate)
-    // })
+    ipcRenderer.on('candidate', (e, candidate) => {
+        console.log('receive a candidate', candidate)
+        addIceCandidate(candidate)
+    })
 
     async function createAnswer(offer) {
         // 添加流
         await getScreenStreamV2()
         await pc.setRemoteDescription(offer)
         await pc.setLocalDescription(await pc.createAnswer())
-        console.log('answer', JSON.stringify(pc.localDescription))
+        console.log('create answer success', JSON.stringify(pc.localDescription))
         return pc.localDescription
     }
 
