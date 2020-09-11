@@ -32,6 +32,7 @@
     ]
   },
   "devDependencies": {
+    "cross-env": "^7.0.2",
     "customize": "^4.0.4",
     "customize-cra": "^1.0.0",
     "react-app-rewired": "^2.1.6"
